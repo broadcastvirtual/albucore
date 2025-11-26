@@ -3,16 +3,18 @@ import pytest
 import cv2
 from albucore.decorators import contiguous
 from albucore.functions import float32_io, from_float, to_float, uint8_io
-from albucore.utils import NPDTYPE_TO_OPENCV_DTYPE, clip, convert_value, get_opencv_dtype_from_numpy
+from albucore.utils import NPDTYPE_TO_OPENCV_DTYPE, clip, convert_value, get_opencv_dtype_from_numpy, get_num_channels
 
 
 @pytest.mark.parametrize("input_img, dtype, expected", [
     (np.array([[-300, 0], [100, 400]], dtype=np.float32), np.uint8, np.array([[0, 0], [100, 255]], dtype=np.float32)),
     (np.array([[-0.02, 0], [0.5, 2.2]], dtype=np.float32), np.float32, np.array([[0, 0], [0.5, 1.0]], dtype=np.float32))
 ])
-def test_clip(input_img, dtype, expected):
-    clipped = clip(input_img, dtype=dtype)
+@pytest.mark.parametrize("inplace", [False, True])
+def test_clip(input_img, dtype, expected, inplace):
+    clipped = clip(input_img, dtype=dtype, inplace=inplace)
     np.testing.assert_array_equal(clipped, expected)
+    assert clipped.dtype == dtype
 
 valid_cv2_types = {
     cv2.CV_8U, cv2.CV_16U, cv2.CV_32F, cv2.CV_64F, cv2.CV_32S
@@ -219,3 +221,39 @@ def test_wrapper_intermediate_dtype(wrapper):
 
     original = np.random.rand(10, 10, 3).astype(np.float32)
     _ = check_dtype(original)
+
+
+@pytest.mark.parametrize("shape, expected_channels, description", [
+    # 2D grayscale image (H, W)
+    ((100, 99), 1, "2D grayscale image"),
+    ((256, 256), 1, "2D grayscale image"),
+
+    # 3D image with channels (H, W, C)
+    ((100, 99, 1), 1, "3D image with 1 channel"),
+    ((100, 99, 3), 3, "3D RGB image"),
+    ((100, 99, 7), 7, "3D multi-channel image"),
+
+    # 3D volume (D, H, W) - WARNING: returns W as channels!
+    ((10, 100, 99), 99, "3D volume (D,H,W) - WARNING: returns W as channels"),
+
+    # 4D batch of images (N, H, W, C)
+    ((4, 100, 99, 1), 1, "Batch of grayscale images"),
+    ((4, 100, 99, 3), 3, "Batch of RGB images"),
+    ((10, 224, 224, 3), 3, "Batch of RGB images"),
+
+    # 4D batch of volumes (N, D, H, W) - WARNING: returns W as channels!
+    ((2, 10, 100, 99), 99, "Batch of volumes (N,D,H,W) - WARNING: returns W as channels"),
+
+    # 5D batch of volumes with channels (N, D, H, W, C)
+    ((2, 10, 100, 99, 1), 1, "Batch of volumes with 1 channel"),
+    ((2, 10, 100, 99, 3), 3, "Batch of volumes with 3 channels"),
+
+    # Edge cases
+    ((1, 1, 1), 1, "Minimal 3D array"),
+    ((1, 1), 1, "Minimal 2D array"),
+    ((100,), 1, "1D array"),
+])
+def test_get_num_channels(shape, expected_channels, description):
+    """Test get_num_channels for various array dimensions."""
+    image = np.zeros(shape)
+    assert get_num_channels(image) == expected_channels, f"Failed for {description} with shape {shape}"
