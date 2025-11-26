@@ -13,6 +13,10 @@ Key features:
 - Seamless integration with Albumentations
 - Extensive benchmarking for performance validation
 
+## GitAds Sponsored
+[![Sponsored by GitAds](https://gitads.dev/v1/ad-serve?source=albumentations-team/albucore@github)](https://gitads.dev/v1/ad-track?source=albumentations-team/albucore@github)
+
+
 ## Installation
 
 ```bash
@@ -119,3 +123,5 @@ MIT
 ## Acknowledgements
 
 Albucore is part of the [AlbumentationsX](https://github.com/albumentations-team/AlbumentationsX) project. We'd like to thank all contributors to [AlbumentationsX](https://albumentations.ai/people) and the broader computer vision community for their inspiration and support.
+
+<!-- GitAds-Verify: 1LSAKH1Y2GKIISALRDIFCG2T9YYNR5WD -->
